@@ -1,0 +1,40 @@
+﻿@page "/"
+
+@inject IMovieRepository repository
+@attribute [AllowAnonymous]
+<div>
+    <h3>In Theaters</h3>
+    <MoviesList Movies="InTheaters" />
+</div>
+<div>
+    <h3>Upcoming Releases</h3>
+    <MoviesList Movies="Upcoming" />
+
+</div>
+<div>
+    <TypeAhead SearchMethod="SearchMethod">
+    <ResultTemplate>
+        @context @*display the item*@
+    </ResultTemplate>
+    </TypeAhead>
+</div>
+
+@code
+{
+    private List<Movie>? InTheaters;
+    private List<Movie>? Upcoming;
+    protected async override Task OnInitializedAsync()
+    {
+        var response = await repository.GetIndexPageDTO();
+        InTheaters = response.InTheaters;
+        Upcoming = response.UpcomingReleases;
+    }
+
+    private async Task<IEnumerable<string>> SearchMethod(string _searchText)
+    {
+        await Task.Delay(2000);
+        if (_searchText == "test") { return Enumerable.Empty<string>(); }
+        return new List<string>() { "Filipe", "Gavil" };
+
+    }
+}

@@ -1,0 +1,117 @@
+﻿@inject IPersonRepository personRepository
+<EditForm Model="Movie" OnValidSubmit="OnDataAnnotationsValidated" >
+    <DataAnnotationsValidator />
+    <div class="mb-3 row">
+        <label class="form-label" >Name</label>
+        <div>
+            <InputText class="form-control" @bind-Value="Movie.Title" />
+            <ValidationMessage For="@(() => Movie.Title)" />
+        </div>        
+    </div>
+
+    <div class="mb-3 row">
+        <label class="form-label" >In Theaters</label>
+        <div>
+            <InputCheckbox @bind-Value="Movie.InTheaters"  />
+            <ValidationMessage For="@(() => Movie.InTheaters)" />
+        </div>        
+    </div>
+
+    <div class="mb-3 row">
+        <label class="form-label" >Trailer</label>
+        <div>
+            <InputText class="form-control" @bind-Value="Movie.Trailer"  />
+            <ValidationMessage For="@(() => Movie.Trailer)" />
+        </div>        
+    </div>
+
+    <div class="mb-3 row">
+        <label class="form-label" >Release Date</label>
+        <div>
+            <InputDate class="form-control" @bind-Value="Movie.ReleaseDate" />
+            <ValidationMessage For="@(() => Movie.ReleaseDate)" />
+        </div>        
+    </div>
+
+    <div class="mb-3 row">
+        <div class="form-markdown">
+                <InputMarkdown @bind-Value="Movie.Summary" Label="Summary" For="@(() => Movie.Summary)" />
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <InputImg Label="Poster" OnSelectedImage="PosterSelected" ImageUrl="@imageUrl" />
+    </div>
+
+    <div class="mb-3 row">
+        <label class="form-label" >Genres</label>
+        <MultiSelector NotSelected="NotSelected" Selected="Selected">
+
+        </MultiSelector>
+    </div>
+
+    <div class="mb-3 row">
+        <label class="form-label" >Actors</label>
+        <MultiSelectorTypeAhead SearchMethod="SearchMethod" SelectedElements= "SelectedActors" Context="person">
+            <ResultTemplate>
+                <img style="width: 50px;" src="@person.Picture" />
+                @person.Name
+            </ResultTemplate>
+            <ListTemplate>
+                <img style="width: 50px;" src="@person.Picture" />
+                @person.Name / <input type="text" placeholder="Character" @bind="person.Character"/>
+            </ListTemplate>
+        </MultiSelectorTypeAhead>
+    </div>
+
+
+
+    <button class="btn btn-success" type="submit">Save changes</button>
+
+</EditForm>
+
+@code {
+    [Parameter] public Movie Movie { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public List<Genre> SelectedGenres { get; set; } = new List<Genre>();
+    [Parameter] public List<Genre> NotSelectedGenres { get; set; } = new List<Genre>();
+    [Parameter] public List<Person> SelectedActors { get; set; } = new List<Person>();
+
+    private List<MultiSelectorModel> Selected = new List<MultiSelectorModel>();
+    private List<MultiSelectorModel> NotSelected = new List<MultiSelectorModel>();
+    private string imageUrl;
+
+    protected override void OnInitialized()
+    {
+        Selected = SelectedGenres.Select(x => new MultiSelectorModel(x.Id.ToString(), x.Name)).ToList();
+        NotSelected = NotSelectedGenres.Select(x => new MultiSelectorModel(x.Id.ToString(), x.Name)).ToList();
+
+        //make Person.Picture null so when its not updated, its not sent to the API ==> less trafic
+        if (!string.IsNullOrEmpty(Movie.Poster))
+        {
+            imageUrl = Movie.Poster;
+            Movie.Poster = null;
+        }
+    }
+
+    private void PosterSelected(string imageBase64)
+    {
+        Movie.Poster = imageBase64;
+        imageUrl = null;
+    }
+
+    private async Task<IEnumerable<Person>> SearchMethod(string _searchText)
+    {
+        return await personRepository.GetPersonByName(_searchText);
+    }
+
+    private async Task OnDataAnnotationsValidated()
+    {
+        Movie.MovieGenre = Selected.Select(x => new MovieGenre { GenreId = Convert.ToInt32(x.Key) }).ToList();
+        Movie.MovieActor = SelectedActors.Select(x => new MovieActor { PersonId = x.Id, Character = x.Character }).ToList();
+
+        if (!string.IsNullOrWhiteSpace(Movie.Poster)) imageUrl = null;
+
+        await OnValidSubmit.InvokeAsync(null);
+
+    }
+}

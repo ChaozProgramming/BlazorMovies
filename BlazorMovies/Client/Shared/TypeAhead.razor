@@ -1,0 +1,167 @@
+﻿@*Chris Sainty'is typeahead component*@
+
+@using System.Timers
+@typeparam TItem
+
+
+<div class="blazored-typeahead">
+    <div class="blazored-typeahead__controls">
+        <input  type="text"
+                class="blazored-typeahead__input"
+                autocomplete="off"
+                placeholder="@Placeholder"
+                @bind-value="@SearchText"
+                @bind-value:event="oninput"
+                @onclick="@ShowSuggestions"
+                @onfocusout="onfocusout" /> 
+                
+                @*  If onfocusout is fired first, selectSuggestion on onClick is ignored, that why we 
+                    create onMouseOver so focus out does not disappears the suggestions*@
+    </div>
+    @if (IsSearching)
+    {
+        <div class="blazored-typeahead__results">
+            <div class="blazored-typeahead__result">
+                <span>Loading...</span>
+            </div>
+        </div>
+
+    }
+    else if(ShouldShowSuggestions())
+    {
+        <div class="blazored-typeahead__results">
+            @foreach(var item in Suggestions)
+            {
+                <div @key="item" class="blazored-typeahead__result"
+                    tabindex="0" @onclick="@(() => SelectSuggestion(item))"
+                    @onmouseover="OnMouseOverSuggestion"
+                    @onmouseout="OnMouseOutSuggestion"
+                    >
+                    @ResultTemplate(item);
+                </div>
+
+            }
+        </div>
+    }
+    else if(ShowNotFound())
+    {
+        <div class="blazored-typeahead__results">
+            @if (NotFoundTemplate != null)
+            {
+                <div class="blazored-typeahead__notfound">
+                    @NotFoundTemplate
+                </div>
+            }
+            else
+            {
+                <div class="blazored-typeahead__notfound">
+                    No Result found
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Placeholder { get; set; }
+    [Parameter] public int MinimumLength { get; set; } = 3;
+    [Parameter] public int Debounce { get; set; } = 300;
+    [Parameter] public Func<string, Task<IEnumerable<TItem>>> SearchMethod {get; set;}
+    [Parameter] public RenderFragment<TItem> ResultTemplate { get; set; }
+    [Parameter] public RenderFragment NotFoundTemplate { get; set; }
+    [Parameter] public EventCallback<TItem> ValueChanged { get; set; }
+
+    private bool IsSearching = false;
+    private bool IsShowingSuggestions = false;
+    private string searchText = string.Empty;
+    private Timer debounceTimer;
+    protected TItem[] Suggestions { get; set; } = new TItem[0];
+
+    protected override void OnInitialized()
+    {
+        debounceTimer = new Timer();
+        debounceTimer.Interval = Debounce;
+        debounceTimer.AutoReset = false; // only fire the search method one time. Not every 300ms (Debounce)
+        debounceTimer.Elapsed += Search;
+        base.OnInitialized();
+    }
+
+    private async Task SelectSuggestion(TItem _item)
+    {
+        SearchText = "";
+        await ValueChanged.InvokeAsync(_item);
+
+    }
+
+    private bool ShowNotFound()
+    {
+        return !Suggestions.Any() && IsShowingSuggestions;
+    }
+
+    protected async void Search(Object source, ElapsedEventArgs e)
+    {
+        IsSearching = true;
+        IsShowingSuggestions = false;
+        await InvokeAsync(StateHasChanged);
+
+        Suggestions = (await SearchMethod.Invoke(searchText)).ToArray();
+
+        IsSearching = false;
+        IsShowingSuggestions = true;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string SearchText
+    {
+        get => searchText;
+        set 
+        {
+            searchText = value;
+
+            if (value.Length == 0)
+            {
+                IsShowingSuggestions = false;
+                debounceTimer.Stop();
+                Suggestions = new TItem[0];
+            }
+            else if (value.Length >= MinimumLength)
+            {
+                debounceTimer.Stop();
+                debounceTimer.Start();
+            }
+        }
+    }
+
+    private void ShowSuggestions()
+    {
+        if (Suggestions.Any())
+        {
+            IsShowingSuggestions = true;
+        }
+    }
+
+    private void onfocusout()
+    {
+        if(!isMouseOnSuggestion)
+            IsShowingSuggestions = false;
+    }
+
+    private bool  ShouldShowSuggestions()
+    {
+        return IsShowingSuggestions && Suggestions.Any();
+    }
+
+    bool isMouseOnSuggestion = false;
+    private void OnMouseOverSuggestion()
+    {
+        isMouseOnSuggestion = true;
+    }
+
+    private void OnMouseOutSuggestion()
+    {
+        isMouseOnSuggestion = false;
+    }
+
+}
+        

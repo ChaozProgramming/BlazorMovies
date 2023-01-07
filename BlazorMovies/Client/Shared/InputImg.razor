@@ -1,0 +1,45 @@
+﻿<div>
+    <label>@Label</label>
+    <div>
+        @*set multiple if user is allowed to add more then one image*@
+        <InputFile accept=".jpg,.jpeg,.png" OnChange="OnChange" />
+    </div>
+</div>
+
+@if (imageBase64 != null)
+{
+    <div style="margin:10px;">
+        <img src="data:image/jpeg;base64, @imageBase64" style="width:400px;"/>
+    </div>    
+}
+
+@if (ImageUrl  != null)
+{
+    <div style="margin:10px;">
+        <img src="@ImageUrl" style="width:400px;"/>
+    </div>    
+}
+
+@code {
+    [Parameter] public string Label { get; set; }
+    [Parameter] public string ImageUrl { get; set; }
+    [Parameter] public EventCallback<string> OnSelectedImage { get; set; }
+    private string imageBase64;
+
+
+    async Task OnChange(InputFileChangeEventArgs e)
+    {
+        var imageFiles = e.GetMultipleFiles();
+
+        foreach (var imageFile in imageFiles)
+        {
+            var buffer = new byte[imageFile.Size];
+            await imageFile.OpenReadStream().ReadAsync(buffer);
+            imageBase64 = Convert.ToBase64String(buffer);
+            await OnSelectedImage.InvokeAsync(imageBase64);
+            ImageUrl = null;
+            StateHasChanged();
+        }
+
+    }
+}

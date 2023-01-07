@@ -1,0 +1,50 @@
+﻿@typeparam TListItemType
+
+@if(List == null)
+{
+    if(NullTemplate != null)
+    {
+        @NullTemplate
+    }
+    else
+    {
+        //Default content
+        <img style="width: 20px" src="https://i.gifer.com/origin/b4/b4d657e7ef262b88eb5f7ac021edda87.gif" />
+    }
+}
+else if(List.Count == 0)
+{
+    if(EmptyTemplate != null)
+    {
+        @EmptyTemplate
+    }
+    else
+    {
+        //default content
+        <text>There a no record to show</text>
+    }
+}
+else
+{
+    //cast to MarkupString when you want users to enter html tags -dynamically render html
+    if (ElementTemplate != null)
+    {
+        @foreach (var element in List)
+        {
+            @ElementTemplate(element)
+        }
+
+    }
+    else
+    {
+        @WholeListTemplate
+    }
+}
+
+@code {
+    [Parameter] public RenderFragment NullTemplate { get; set; }
+    [Parameter] public RenderFragment EmptyTemplate { get; set; }
+    [Parameter] public RenderFragment<TListItemType> ElementTemplate { get; set; }
+    [Parameter] public RenderFragment WholeListTemplate { get; set; }
+    [Parameter] public List<TListItemType> List { get; set; }
+}

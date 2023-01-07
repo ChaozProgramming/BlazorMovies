@@ -1,0 +1,27 @@
+﻿
+<div class="individual-movie-container">
+    <a href="@movieURL">
+        <img src="@Movie.Poster" class= "movie-poster" />
+    </a>
+    <p><a href="@movieURL" >@Movie.TitleBrief</a></p>
+    <div>
+        <AuthorizeView>
+            <Authorized>
+                <a class="btn btn-primary mb-2 col-auto mx-sm-3" href="/movies/edit/@Movie.Id">Edit</a>
+                <button type="button" class="btn alert-danger mb-2 col-auto" @onclick="(() => DeleteMovie.InvokeAsync(Movie))">Delete</button>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Movie Movie { get; set; }
+    [Parameter] public EventCallback<Movie> DeleteMovie { get; set; }
+    private string movieURL = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        movieURL = $"movie/{Movie.Id}";
+    }
+
+}

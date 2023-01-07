@@ -1,0 +1,29 @@
+﻿<!--
+
+this component handle the redirection of the blazor component to the idenfity framework
+and handles the responses into the blazor application
+
+
+-->
+@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@inject NavigationManager navigationManager
+
+<RemoteAuthenticatorView Action="@Action">
+
+    <LogOutSucceeded>
+        <!--
+        Add <Text> or a <customComponent> or return to homepage
+        -->
+        @{
+            navigationManager.NavigateTo("/");
+        }
+    </LogOutSucceeded>
+
+</RemoteAuthenticatorView>
+
+
+@code {
+    [Parameter] public string? Action { get; set; }
+}

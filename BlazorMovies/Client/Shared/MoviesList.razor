@@ -1,0 +1,29 @@
+﻿@inject IJSRuntime js
+@inject IMovieRepository movieRepository
+
+<div class="movies-container">
+    <GenericList List="Movies">
+        <ElementTemplate Context="movie">
+            <IndividualMovie Movie="movie" DeleteMovie="DeleteMovie" @key="movie.Id"/>
+        </ElementTemplate>
+    </GenericList>
+</div>
+
+@code {
+    [Parameter] public List<Movie> Movies { get; set; }
+
+    private async Task DeleteMovie(Movie _movie)
+    {
+        //dit is een default confirm in je browser? Can be blocked?
+
+        await js.MyFunction("custom message");
+        var confirmed = await js.Confirm(string.Format("Are you sure you want to delete {0}?", _movie.Title));
+
+        if (confirmed)
+        {
+            Movies.Remove(_movie);
+            await movieRepository.DeleteMovie(_movie.Id);
+        }
+        
+    }
+}

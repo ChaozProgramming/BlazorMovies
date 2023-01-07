@@ -1,0 +1,76 @@
+﻿@page "/persons"
+@inject IPersonRepository personRepository
+@attribute [Authorize]
+<h3>Index Persons</h3>
+
+<div class="form-group" >
+    <a class="btn btn-info" href="/person/create">New Person</a>
+</div>
+
+<Pagination CurrentPage="@paginationDTO.Page" TotalAmountPages="totalAmountPages" SelectedPage="SelectedPage" />
+
+<GenericList List="Persons">
+    <WholeListTemplate>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var item in Persons)
+                {
+                    //Hide buttons when not admin
+                    <tr>
+                        <td>
+                            <a class="btn btn-success" href="/person/edit/@item.Id">Edit</a>
+                            <button class="btn btn-danger" @onclick=@(() => DeletePerson(item.Id))>Delete</button>
+                        </td>
+                        <td>@item.Name</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </WholeListTemplate>
+</GenericList>
+
+@code {
+    List<Person> Persons;
+    PaginationDTO paginationDTO = new PaginationDTO() { RecordsPerPage = 1 };
+    private int totalAmountPages;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadPeople();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+
+        }
+    }
+
+    private async Task LoadPeople()
+    {
+        var paginatedResponse = await personRepository.GetPersons(paginationDTO);
+        Persons = paginatedResponse.Response;
+        totalAmountPages = paginatedResponse.TotalAmountPages;  
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        paginationDTO.Page = page;
+        await LoadPeople();
+    }
+
+    private async Task DeletePerson(int id)
+    {
+        await personRepository.DeletePerson(id);
+        await LoadPeople();
+    }
+}
