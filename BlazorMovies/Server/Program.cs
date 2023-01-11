@@ -2,6 +2,7 @@ using BlazorMovies.Server.Data;
 using BlazorMovies.Server.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
@@ -29,9 +30,15 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
+    options.User.RequireUniqueEmail = true;
 })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext, string>>()
+    .AddRoleManager<RoleManager<IdentityRole>>();
+    //.AddUserStore<UserStore>()
+    //.AddUserManager<UserManager<IdentityUser>>();
+    
 
 builder.Services.AddIdentityServer()
     .AddApiAuthorization<IdentityUser, ApplicationDbContext>()
@@ -44,7 +51,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 //TODO doesnt make a difference
-//JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var app = builder.Build();
 

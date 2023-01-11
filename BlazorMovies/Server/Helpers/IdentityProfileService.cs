@@ -38,6 +38,10 @@ namespace BlazorMovies.Server.Helpers
         {
             var userId = context.Subject.GetSubjectId();
             var user = await userManager.FindByIdAsync(userId);
+
+            //bool adminRole = await userManager.IsInRoleAsync(user, "admin");
+            //var claims = await userManager.GetClaimsAsync(user);
+
             context.IsActive = user != null;
         }
     }
